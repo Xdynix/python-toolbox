@@ -2,12 +2,21 @@
 name = "python-toolbox"
 version = "0.1.0"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "pydantic[email]>=2.11.4",
+]
 
 [dependency-groups]
 dev = [
+    "jsonschema>=4.23.0",
     "mypy>=1.15.0",
     "pre-commit>=4.2.0",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.14.0",
+    "pytest-randomly>=3.16.0",
+    "types-jsonschema>=4.23.0.20241208",
 ]
 
 [tool.ruff]
@@ -41,6 +50,45 @@ ignore = [
     "E117", # over-indented
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # assert
+    "S105", # hardcoded-password-string
+]
+
 [tool.mypy]
 strict = true
 cache_dir = ".cache/mypy"
+mypy_path = "utilities"
+
+[tool.pytest.ini_options]
+pythonpath = "utilities"
+cache_dir = ".cache/pytest"
+addopts = [
+    "--doctest-modules",
+    "--import-mode", "importlib",
+    "--cov-config", "pyproject.toml",
+    "--cov-report", "term",
+    "--cov-report", "html",
+    # "--cov-fail-under", "100",
+]
+markers = [
+    "only: shorthand mark used to select a small subset of test cases for debugging",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+branch = true
+data_file = ".cache/coverage/data.db"
+disable_warnings = ["no-data-collected"]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@overload",
+]
+
+[tool.coverage.html]
+directory = ".cache/cov-report"
