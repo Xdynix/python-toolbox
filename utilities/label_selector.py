@@ -357,9 +357,11 @@ class BaseRequirement(BaseModel):
     def matches(self, labels: Mapping[str, str]) -> bool:
         match self.operator:
             case Operator.EQUALS | Operator.DOUBLE_EQUALS | Operator.IN:
-                return labels.get(self.key) in self.values
+                value = labels.get(self.key)
+                return value is not None and value in self.values
             case Operator.NOT_EQUALS | Operator.NOT_IN:
-                return labels.get(self.key) not in self.values
+                value = labels.get(self.key)
+                return value is None or value not in self.values
             case Operator.EXISTS:
                 return self.key in labels
             case Operator.DOES_NOT_EXIST:
