@@ -34,7 +34,7 @@ Example:
     ('example.com', 'env')
 
     >>> s = "env=prod, tier in (frontend,backend), !debug"
-    >>> selector = LabelSelector.from_str(s)
+    >>> selector = LabelSelector.model_validate(s)
     >>> selector.matches({"env": "prod", "tier": "frontend"})
     True
     >>> selector.matches({"env": "staging", "tier": "frontend"})
@@ -57,7 +57,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from enum import Enum, StrEnum, auto
 from functools import cached_property, total_ordering
 from operator import attrgetter
-from typing import Annotated, Any, Literal, Self, TypeVar
+from typing import Annotated, Any, ClassVar, Literal, Self, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -443,7 +443,7 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
 
         >>> # Or with a string representation.
         >>> s = "environment=production, tier in (frontend,backend), enabled"
-        >>> selector = LabelSelector.from_str(s)
+        >>> selector = LabelSelector.model_validate(s)
         >>> selector.matches({
         ...     "environment": "production",
         ...     "tier": "frontend",
@@ -452,7 +452,7 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
         True
     """
 
-    model_config = ConfigDict(
+    model_config: ClassVar[ConfigDict] = ConfigDict(
         frozen=True,
         json_schema_extra={"description": "A set of label selector requirements."},
     )
@@ -519,6 +519,22 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
         """
         requirements = tuple(parse(s))
         return cls.model_validate(requirements)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler: "GetCoreSchemaHandler",
+    ) -> "CoreSchema":
+        default_schema = handler(source_type)
+        from_str_schema = core_schema.chain_schema(
+            [
+                core_schema.str_schema(),
+                core_schema.no_info_plain_validator_function(cls.from_str),
+                default_schema,
+            ]
+        )
+        return core_schema.union_schema([default_schema, from_str_schema])
 
 
 # ==== Lexer ====
