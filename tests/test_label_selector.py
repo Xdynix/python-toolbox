@@ -11,7 +11,7 @@ from label_selector import (
     Operator,
     Requirement,
 )
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 
 
 class TestLabelKey:
@@ -587,3 +587,10 @@ class TestLabelSelector:
     def test_from_str_invalid(self, s: str, match: str) -> None:
         with pytest.raises(ValueError, match=match):
             LabelSelector.from_str(s)
+
+    def test_parse_string(self) -> None:
+        class Payload(BaseModel):
+            selector: LabelSelector
+
+        payload = Payload.model_validate({"selector": "foo=bar"})
+        assert payload.selector.matches({"foo": "bar"})
