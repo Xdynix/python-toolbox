@@ -8,16 +8,24 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "jsonschema>=4.23.0",
+    "rust-just>=1.42.4",
+]
+lint = [
     "mypy>=1.15.0",
     "pre-commit>=4.2.0",
+    "types-jsonschema>=4.23.0.20241208",
+]
+test = [
+    "jsonschema>=4.23.0",
     "pytest>=8.3.5",
     "pytest-asyncio>=0.26.0",
     "pytest-cov>=6.1.1",
     "pytest-mock>=3.14.0",
     "pytest-randomly>=3.16.0",
-    "types-jsonschema>=4.23.0.20241208",
 ]
+
+[tool.uv]
+default-groups = "all"
 
 [tool.ruff]
 cache-dir = ".cache/ruff"
@@ -70,7 +78,7 @@ addopts = [
     "--cov-config", "pyproject.toml",
     "--cov-report", "term",
     "--cov-report", "html",
-    # "--cov-fail-under", "100",
+    "--cov-fail-under", "100",
 ]
 markers = [
     "only: shorthand mark used to select a small subset of test cases for debugging",
@@ -82,6 +90,9 @@ asyncio_default_fixture_loop_scope = "function"
 branch = true
 data_file = ".cache/coverage/data.db"
 disable_warnings = ["no-data-collected"]
+omit = [
+    "utilities/graceful.py",
+]
 
 [tool.coverage.report]
 exclude_also = [
