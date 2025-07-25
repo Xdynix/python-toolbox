@@ -5,8 +5,6 @@ async applications, with support for preserving existing signal handlers and nes
 contexts.
 """
 
-# ruff: noqa: T201
-
 __all__ = (
     "GRACEFUL",
     "graceful_shutdown",
@@ -125,7 +123,8 @@ async def graceful_shutdown(
         asyncio.Event: An event that will be set when any of the specified signals are
             received.
 
-    Example:
+    Example::
+
         async with graceful_shutdown() as stop:
             while not stop.is_set():
                 await some_async_work()
@@ -160,6 +159,7 @@ async def wait_or_timeout(event: asyncio.Event, timeout: float) -> bool:
 
 
 async def demo() -> None:
+    # ruff: noqa: T201
     import os
 
     print(f"graceful_shutdown() demo: pid={os.getpid()}")
