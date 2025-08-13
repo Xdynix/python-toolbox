@@ -58,8 +58,8 @@ def add_handler(signum: int) -> None:
         """Top-level handler that runs when the signal occurs.
 
         Order:
-            1. Our `dispatch()` sets all subscribed asyncio.Events
-            2. Previous `signal.signal()` handler, called with (signum, frame).
+            1. Our ``dispatch()`` sets all subscribed asyncio.Events
+            2. Previous ``signal.signal()`` handler, called with (signum, frame).
             3. Previous loop handler, called with its original args.
 
         We intentionally do *not* catch exceptions or fix signature mismatches,

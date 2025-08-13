@@ -91,12 +91,12 @@ class LabelKey(str):
     """Validated label key.
 
     Valid label keys have two segments: an optional prefix and name, separated by a
-    slash (`/`). The name segment is required and must be 63 characters or fewer,
-    beginning and ending with an alphanumeric character (`[a-z0-9A-Z]`) with dashes
-    (`-`), underscores (`_`), dots (`.`), and alphanumerics between. The prefix is
+    slash (``/``). The name segment is required and must be 63 characters or fewer,
+    beginning and ending with an alphanumeric character (``[a-z0-9A-Z]``) with dashes
+    (``-``), underscores (``_``), dots (``.``), and alphanumerics between. The prefix is
     optional. If specified, the prefix must be a DNS subdomain: a series of DNS labels
     separated by dots (.), not longer than 253 characters in total, followed by a slash
-    (`/`).
+    (``/``).
 
     This class can also be used for type annotation in Pydantic models.
 
@@ -221,8 +221,8 @@ class LabelValue(str):
     A valid label value:
 
     - Must be 63 characters or fewer (can be empty).
-    - Unless empty, must begin and end with an alphanumeric character (`[a-z0-9A-Z]`).
-    - Could contain dashes (`-`), underscores (`_`), dots (`.`), and alphanumerics
+    - Unless empty, must begin and end with an alphanumeric character (``[a-z0-9A-Z]``).
+    - Could contain dashes (``-``), underscores (``_``), dots (``.``), and alphanumerics
       between.
 
     This class can also be used for type annotation in Pydantic models.
@@ -476,8 +476,8 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
             labels: A mapping of label keys to their values.
 
         Returns:
-            True if all requirements in this selector match the given labels,
-            False otherwise.
+            ``True`` if all requirements in this selector match the given labels,
+            ``False`` otherwise.
         """
 
         return all(requirement.matches(labels) for requirement in self.requirements)
@@ -493,9 +493,9 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
         The selector string uses a comma-separated list of requirements. Each
         requirement can use one of the following syntaxes:
 
-        - Equality-based: `key=value`, `key==value`, or `key!=value`
-        - Set-based: `key in (value1,value2,...)` or `key notin (value1,value2,...)`
-        - Presence: `key` or `!key`
+        - Equality-based: ``key=value``, ``key==value``, or ``key!=value``
+        - Set-based: ``key in (value1,value2,...)`` or ``key notin (value1,value2,...)``
+        - Presence: ``key`` or ``!key``
 
         Requirements can be combined with commas, and whitespace is ignored.
         Empty values are allowed in both equality-based and set-based requirements.
@@ -815,11 +815,6 @@ def parse_identifiers_list(tokens: TokenSequence) -> set[LabelValue]:
                     break
                 if next_token == Token.COMMA:  # Handle ",,"
                     identifiers.add(LabelValue(""))
-                    # This line appears in the Kubernetes source code. However,
-                    # retaining it will cause a failure when parsing strings like
-                    # "key in (value,,)".
-                    # Ref: https://github.com/kubernetes/kubernetes/blob/0b8133816b9e78f96042ae42150998299f134ea7/staging/src/k8s.io/apimachinery/pkg/labels/selector.go#L838
-                    # next(tokens)
 
             case _:
                 raise ValueError(f"found '{value}', expected: ',', or identifier")
