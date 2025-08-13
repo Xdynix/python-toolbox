@@ -10,7 +10,7 @@ repos:
         additional_dependencies:
           - '@commitlint/config-conventional'
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: pretty-format-json
@@ -35,7 +35,7 @@ repos:
           - --configPointer
           - /markdownlint
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.0
+    rev: v0.12.8
     hooks:
       - id: ruff-check
         args: [ --fix ]

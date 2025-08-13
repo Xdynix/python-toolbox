@@ -102,4 +102,4 @@ exclude_also = [
 ]
 
 [tool.coverage.html]
-directory = ".cache/cov-report"
+directory = "var/cov-report"
