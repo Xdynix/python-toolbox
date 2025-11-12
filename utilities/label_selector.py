@@ -737,7 +737,7 @@ def parse_requirement(tokens: TokenSequence) -> Requirement:
 
     label = LabelKey(value)
 
-    next_token, next_value = tokens.peek()
+    next_token, _ = tokens.peek()
     if next_token in (Token.END_OF_STRING, Token.COMMA) and operator is None:
         operator = Operator.EXISTS
 
@@ -760,7 +760,7 @@ def parse_requirement(tokens: TokenSequence) -> Requirement:
 
 
 def parse_exact_value(tokens: TokenSequence) -> set[LabelValue]:
-    next_token, next_value = tokens.peek()
+    next_token, _ = tokens.peek()
     if next_token in (Token.END_OF_STRING, Token.COMMA):  # Handle "= $"
         return {LabelValue("")}
 
