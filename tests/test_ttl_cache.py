@@ -1,4 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from decimal import Decimal
+from fractions import Fraction
 from time import sleep
 
 import pytest
@@ -170,20 +172,29 @@ class TestTTLCache:
         # key order: [2, 1]
         assert mock_func.call_count == 5
 
+    def test_int_bool_handling(self) -> None:
+        @ttl_cache(ttl=10.0)
+        def show_kind(x: int | bool) -> str:
+            return "bool" if isinstance(x, bool) else "int"
+
+        assert show_kind(True) == "bool"
+        assert show_kind(1) == "int"
+        assert show_kind.cache_info().misses == 2
+
     def test_typed_is_false(self, mocker: MockerFixture) -> None:
         mock_func = mocker.Mock(return_value="result")
         cached_func = ttl_cache(ttl=10.0, typed=False)(mock_func)
 
-        cached_func(1)
-        cached_func(1.0)
+        cached_func(Decimal(42))
+        cached_func(Fraction(42))
         assert mock_func.call_count == 1
 
     def test_typed_is_true(self, mocker: MockerFixture) -> None:
         mock_func = mocker.Mock(return_value="result")
         cached_func = ttl_cache(ttl=10.0, typed=True)(mock_func)
 
-        cached_func(1)
-        cached_func(1.0)
+        cached_func(Decimal(42))
+        cached_func(Fraction(42))
         assert mock_func.call_count == 2
 
     def test_kwargs_handling(self, mocker: MockerFixture) -> None:
@@ -195,6 +206,14 @@ class TestTTLCache:
         result3 = cached_func(x=1, y=2, z=3)
         assert result1 == result2 == result3 == 6
         assert mock_func.call_count == 3
+
+    def test_kwargs_no_sort(self, mocker: MockerFixture) -> None:
+        mock_func = mocker.Mock(return_value=42)
+        cached_func = ttl_cache(ttl=10.0)(mock_func)
+
+        cached_func(a=1, b=2)
+        cached_func(b=2, a=1)
+        assert mock_func.call_count == 2
 
     def test_thread_safety(self, mocker: MockerFixture) -> None:
         def slow() -> int:

@@ -33,11 +33,23 @@ __all__ = ("ttl_cache",)
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from functools import wraps
 from typing import Any, NamedTuple, Protocol, TypedDict, cast
 
 NO_VALUE = object()
+SENTINEL = object()
+
+
+class Hashed[T](list[T]):
+    __slots__ = ("hash_value",)
+
+    def __init__(self, seq: Iterable[T], *, hash_: Callable[..., int] = hash) -> None:
+        super().__init__(seq)
+        self.hash_value = hash_(seq)
+
+    def __hash__(self) -> int:  # type: ignore[override]
+        return self.hash_value
 
 
 class CacheParameters(TypedDict):
@@ -102,6 +114,8 @@ def ttl_cache[**P, R](
           inspects from the LRU end, expired MRU entries can linger and still count
           toward ``currsize``; eviction at ``maxsize`` may remove a fresh LRU first.
         - All arguments must be hashable.
+        - Keyword argument order matters: ``func(a=1, b=2)`` and ``func(b=2, a=1)``
+          are treated as different calls and will both invoke the original function.
         - Type checking caveat: when decorating methods, the internal ``__get__``
           implementation uses a generic ``Callable[..., R]`` return type to support
           bound method behavior, which hides the actual argument types from static type
@@ -117,33 +131,37 @@ def ttl_cache[**P, R](
     """
 
     def decorator(func: Callable[P, R]) -> TTLCached[P, R]:
-        cache = OrderedDict[int, tuple[R, float]]()
+        cache = OrderedDict[Hashed[Any], tuple[R, float]]()
         lock = threading.RLock()
         hits = 0
         misses = 0
 
-        def make_key(args: tuple[Any, ...], kwargs: dict[str, Any]) -> int:
+        def make_key(args: tuple[Any, ...], kwargs: dict[str, Any]) -> Hashed[Any]:
             """Build a key for this cache."""
+            # Logic adapted from `functools._make_key` in CPython.
+            key = list(args)
+            if kwargs:
+                key.append(SENTINEL)
+                for item in kwargs.items():
+                    key.extend(item)
             if typed:
-                key_args = tuple((arg, type(arg)) for arg in args)
-                key_kwargs = tuple((k, (v, type(v))) for k, v in sorted(kwargs.items()))
-            else:
-                key_args = args
-                key_kwargs = tuple(sorted(kwargs.items()))
-            return hash((key_args, key_kwargs))
+                key.extend(map(type, args))
+                key.extend(map(type, kwargs.values()))
+            # Do not use `isinstance` because we want exact type check.
+            elif len(key) == 1 and type(key[0]) in {int, str}:
+                return cast(Hashed[Any], key[0])
+            return Hashed(tuple(key))
 
-        def trim_cache(now: float, k: int = 8) -> None:  # pragma: no cover
+        def trim_cache(now: float) -> None:  # pragma: no cover
             """Opportunistic cleanup."""
-            for _ in range(k):
-                if not cache:
-                    break
+            while cache:
                 first_key, (_, expiry) = next(iter(cache.items()))
                 if now >= expiry:
                     del cache[first_key]
                 else:
                     break
 
-        def get_value(key: int, now: float) -> R | object:
+        def get_value(key: Hashed[Any], now: float) -> R | object:
             """Retrieve a value from the cache and update the recency of the key."""
             record = cache.get(key)
             if record is None:
@@ -155,7 +173,7 @@ def ttl_cache[**P, R](
             cache.move_to_end(key)
             return value
 
-        def store_value(key: int, value: R, now: float) -> R:
+        def store_value(key: Hashed[Any], value: R, now: float) -> R:
             """Store value to the cache and maintain max size."""
             cache[key] = value, now + ttl
             if maxsize is not None and len(cache) > maxsize:
