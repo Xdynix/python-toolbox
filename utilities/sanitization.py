@@ -76,8 +76,8 @@ def sanitize_formatted_text(value: Any) -> str:
     to support formatted content like text-based tables. Each line is cleaned
     individually: control characters and zero-width characters are removed, Unicode is
     normalized (NFC), and non-standard whitespace (NBSP, etc.) is converted to regular
-    spaces. Trailing whitespace on each line and the final trailing newline are
-    preserved.
+    spaces. Trailing whitespace is removed per line, and trailing empty lines are
+    removed.
 
     Examples:
         >>> sanitize_formatted_text("Line 1\\nLine 2")
@@ -92,12 +92,12 @@ def sanitize_formatted_text(value: Any) -> str:
         'Text NBSP'
         >>> sanitize_formatted_text("\\u200bInvisible removed\\nNext line")
         'Invisible removed\\nNext line'
-        >>> sanitize_formatted_text("Trailing spaces  \\nGone")
+        >>> sanitize_formatted_text("Trailing spaces  \\nGone   ")
         'Trailing spaces\\nGone'
         >>> sanitize_formatted_text("Empty\\n\\nLines preserved")
         'Empty\\n\\nLines preserved'
         >>> sanitize_formatted_text("Text\\n\\n")
-        'Text\\n\\n'
+        'Text'
         >>> sanitize_formatted_text("α-helix\\nβ-sheet")
         'α-helix\\nβ-sheet'
         >>> sanitize_formatted_text("\\x00control\\x01\\nremoved")
@@ -113,7 +113,6 @@ def sanitize_formatted_text(value: Any) -> str:
         raise ValueError("Input should be a valid string.")
 
     normalized_value = unicodedata.normalize("NFC", value)
-    has_trailing_newline = normalized_value.endswith(("\n", "\r\n", "\r"))
     lines = normalized_value.splitlines()
     cleaned_lines = []
 
@@ -137,7 +136,7 @@ def sanitize_formatted_text(value: Any) -> str:
 
         cleaned_lines.append("".join(cleaned_chars).rstrip())
 
-    if has_trailing_newline:
-        cleaned_lines.append("")
+    while cleaned_lines and cleaned_lines[-1] == "":
+        cleaned_lines.pop()
 
     return "\n".join(cleaned_lines)
