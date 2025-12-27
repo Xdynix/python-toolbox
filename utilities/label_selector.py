@@ -488,7 +488,7 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
 
     @classmethod
     def from_str(cls, s: str) -> Self:
-        """Create a LabelSelector from a string representation.
+        """Create a ``LabelSelector`` from a string representation.
 
         The selector string uses a comma-separated list of requirements. Each
         requirement can use one of the following syntaxes:
@@ -504,7 +504,7 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
             s: The selector string to parse.
 
         Returns:
-            A new LabelSelector instance.
+            A new ``LabelSelector`` instance.
 
         Raises:
             ValueError: If the selector string is invalid.
