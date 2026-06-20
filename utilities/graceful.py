@@ -95,6 +95,10 @@ def remove_handler(signum: int) -> None:
         loop.remove_signal_handler(signum)
 
     prev_sig, prev_loop_entry = previous_handlers.pop(signum)
+    # Asymmetric with chain_and_dispatch, which invokes both prior handlers: if a
+    # signal had both a signal.signal handler and a loop entry, only the loop entry
+    # is restored and prev_sig is dropped. In practice the dropped prev_sig is
+    # asyncio's internal noop (add_signal_handler installs it), so this is benign.
     if prev_loop_entry is not None:
         cb, args = prev_loop_entry
         loop.add_signal_handler(signum, cb, *args)
@@ -129,16 +133,21 @@ async def graceful_shutdown(
             while not stop.is_set():
                 await some_async_work()
     """
+    # Materialize so a one-shot iterator isn't exhausted by setup, leaving the
+    # teardown loop with nothing to clean up.
+    signals = tuple(signals)
     stop = asyncio.Event()
-
-    for sig in signals:
-        signal_events[sig].append(stop)
-        add_handler(sig)
+    registered: list[int] = []
 
     try:
+        for sig in signals:
+            signal_events[sig].append(stop)
+            # Track before add_handler so a mid-setup failure still gets cleaned up.
+            registered.append(sig)
+            add_handler(sig)
         yield stop
     finally:
-        for sig in signals:
+        for sig in registered:
             signal_events[sig].remove(stop)
             remove_handler(sig)
 
