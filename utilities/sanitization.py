@@ -1,3 +1,10 @@
+__all__ = (
+    "sanitize_email_subject",
+    "sanitize_filename",
+    "sanitize_formatted_text",
+    "sanitize_text",
+)
+
 import unicodedata
 from typing import Any
 
@@ -140,3 +147,116 @@ def sanitize_formatted_text(value: Any) -> str:
         cleaned_lines.pop()
 
     return "\n".join(cleaned_lines)
+
+
+def sanitize_email_subject(subject: str) -> str:
+    """Remove newlines from email subject to prevent header injection.
+
+    Examples:
+        >>> sanitize_email_subject("Hello\\nWorld")
+        'HelloWorld'
+        >>> sanitize_email_subject("Single line")
+        'Single line'
+    """
+    return "".join(subject.splitlines())
+
+
+def sanitize_filename(value: Any, *, max_length: int = 255) -> str:
+    """Sanitize a filename for safe storage and email attachment use.
+
+    The output is guaranteed to have no control characters or path separators, no
+    leading/trailing whitespace or dots, NFC-normalized Unicode, and a length within the
+    specified limit (extension preserved when truncating).
+
+    Unicode letters, spaces, and common punctuation are deliberately preserved; MIME
+    encoding handles these in email headers and HTTP responses. Whitespace runs are not
+    collapsed, OS-specific reserved names (CON, NUL, etc.) are not checked (the name is
+    never used as a raw filesystem path), and extensions are not validated or restricted
+    (caller's concern).
+
+    Args:
+        value: The filename to sanitize.
+        max_length: Maximum allowed length. The extension is preserved during
+            truncation unless the extension alone exceeds the limit.
+
+    Raises:
+        ValueError: If the result is empty after sanitization.
+
+    Examples:
+        >>> sanitize_filename("report.pdf")
+        'report.pdf'
+        >>> sanitize_filename("path/to\\\\file.pdf")
+        'path_to_file.pdf'
+        >>> sanitize_filename("\\x00evil\\x01name.pdf")
+        'evilname.pdf'
+        >>> sanitize_filename("  .hidden.pdf  ")
+        'hidden.pdf'
+        >>> sanitize_filename(". . . .")
+        Traceback (most recent call last):
+          ...
+        ValueError: Filename is empty after sanitization.
+        >>> sanitize_filename("José García.pdf")
+        'José García.pdf'
+        >>> result = sanitize_filename("a" * 300 + ".pdf")
+        >>> len(result), result[-4:]
+        (255, '.pdf')
+        >>> sanitize_filename("noext" * 60, max_length=20)
+        'noextnoextnoextnoext'
+        >>> sanitize_filename("x." + "a" * 300, max_length=20)
+        'x.aaaaaaaaaaaaaaaaaa'
+        >>> sanitize_filename("test.pdf", max_length=0)
+        Traceback (most recent call last):
+          ...
+        ValueError: max_length must be positive.
+        >>> sanitize_filename(42)
+        Traceback (most recent call last):
+          ...
+        ValueError: Input should be a valid string.
+    """
+    if not isinstance(value, str):
+        raise ValueError("Input should be a valid string.")
+
+    if max_length <= 0:
+        raise ValueError("max_length must be positive.")
+
+    normalized_value = unicodedata.normalize("NFC", value)
+    cleaned_chars: list[str] = []
+
+    for char in normalized_value:
+        if char in ("/", "\\"):
+            cleaned_chars.append("_")
+            continue
+
+        if char.isspace():
+            cleaned_chars.append(" ")
+            continue
+
+        category = unicodedata.category(char)
+        if category.startswith("C"):
+            continue
+
+        cleaned_chars.append(char)
+
+    filename = "".join(cleaned_chars)
+
+    # Strip leading/trailing whitespace and dots (prevents hidden files and trailing-dot
+    # issues).
+    filename = filename.strip(". ")
+
+    if not filename:
+        raise ValueError("Filename is empty after sanitization.")
+
+    # Truncate to `max_length`, preserving the extension when possible.
+    if len(filename) > max_length:
+        ext_pos = filename.rfind(".")
+        if ext_pos > 0:
+            stem, ext = filename[:ext_pos], filename[ext_pos:]
+        else:
+            stem, ext = filename, ""
+
+        if len(ext) >= max_length:
+            filename = filename[:max_length]
+        else:
+            filename = stem[: max_length - len(ext)] + ext
+
+    return filename
