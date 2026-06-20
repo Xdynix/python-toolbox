@@ -57,7 +57,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from enum import Enum, StrEnum, auto
 from functools import cached_property, total_ordering
 from operator import attrgetter
-from typing import Annotated, Any, ClassVar, Literal, Self, TypeVar
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 from pydantic import (
     BaseModel,
@@ -194,8 +194,8 @@ class LabelKey(str):
     def __get_pydantic_core_schema__(
         cls,
         source_type: Any,
-        handler: "GetCoreSchemaHandler",
-    ) -> "CoreSchema":
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
         return core_schema.no_info_plain_validator_function(
             cls,
             ref=cls.__name__,
@@ -266,8 +266,8 @@ class LabelValue(str):
     def __get_pydantic_core_schema__(
         cls,
         source_type: Any,
-        handler: "GetCoreSchemaHandler",
-    ) -> "CoreSchema":
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
         return core_schema.no_info_plain_validator_function(
             cls,
             ref=cls.__name__,
@@ -524,8 +524,8 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
     def __get_pydantic_core_schema__(
         cls,
         source_type: Any,
-        handler: "GetCoreSchemaHandler",
-    ) -> "CoreSchema":
+        handler: GetCoreSchemaHandler,
+    ) -> CoreSchema:
         default_schema = handler(source_type)
         from_str_schema = core_schema.chain_schema(
             [
@@ -624,10 +624,8 @@ def lex(s: str) -> Iterable[tuple[Token, str]]:
 
 # ==== Parser ====
 
-T = TypeVar("T")
 
-
-class Peekable(Iterator[T]):
+class Peekable[T](Iterator[T]):
     """Iterator that supports peeking at the n-th upcoming element."""
 
     def __init__(self, iterator: Iterator[T]):

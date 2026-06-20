@@ -76,13 +76,13 @@ class TestLabelKey:
         assert key == s
         assert isinstance(key, LabelKey)
 
-    @pytest.mark.parametrize("s", (s for s, _ in VALID_DATA))
+    @pytest.mark.parametrize("s", [s for s, _ in VALID_DATA])
     def test_valid_pydantic(self, s: str) -> None:
         key = TypeAdapter(LabelKey).validate_python(s)
         assert key == s
         assert isinstance(key, LabelKey)
 
-    @pytest.mark.parametrize("s", (s for s, _ in VALID_DATA))
+    @pytest.mark.parametrize("s", [s for s, _ in VALID_DATA])
     def test_valid_jsonschema(self, s: str) -> None:
         schema = TypeAdapter(LabelKey).json_schema()
         jsonschema.validate(s, schema)
@@ -92,12 +92,12 @@ class TestLabelKey:
         with pytest.raises(exc, match=message):
             LabelKey(s)
 
-    @pytest.mark.parametrize("s, exc", ((s, exc) for s, exc, _ in INVALID_DATA))
+    @pytest.mark.parametrize("s, exc", [(s, exc) for s, exc, _ in INVALID_DATA])
     def test_invalid_pydantic(self, s: Any, exc: type[Exception]) -> None:
         with pytest.raises(exc):
             TypeAdapter(LabelKey).validate_python(s)
 
-    @pytest.mark.parametrize("s", (s for s, _, _ in INVALID_DATA))
+    @pytest.mark.parametrize("s", [s for s, _, _ in INVALID_DATA])
     def test_invalid_jsonschema(self, s: Any) -> None:
         schema = TypeAdapter(LabelKey).json_schema()
         with pytest.raises(jsonschema.ValidationError):
@@ -164,12 +164,12 @@ class TestLabelValue:
         with pytest.raises(exc, match=message):
             LabelValue(s)
 
-    @pytest.mark.parametrize("s, exc", ((s, exc) for s, exc, _ in INVALID_DATA))
+    @pytest.mark.parametrize("s, exc", [(s, exc) for s, exc, _ in INVALID_DATA])
     def test_invalid_pydantic(self, s: Any, exc: type[Exception]) -> None:
         with pytest.raises(exc):
             TypeAdapter(LabelValue).validate_python(s)
 
-    @pytest.mark.parametrize("s", (s for s, _, _ in INVALID_DATA))
+    @pytest.mark.parametrize("s", [s for s, _, _ in INVALID_DATA])
     def test_invalid_jsonschema(self, s: Any) -> None:
         schema = TypeAdapter(LabelValue).json_schema()
         with pytest.raises(jsonschema.ValidationError):
