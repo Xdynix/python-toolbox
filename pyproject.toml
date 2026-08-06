@@ -1,31 +1,33 @@
 [project]
 name = "python-toolbox"
 version = "0.1.0"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
-    "pydantic[email]>=2.11.4",
+    "pydantic[email]>=2.13.4",
 ]
 
 [dependency-groups]
 dev = [
-    "rust-just>=1.42.4",
+    "rust-just>=1.58.0",
 ]
 lint = [
-    "mypy>=1.15.0",
-    "pre-commit>=4.2.0",
-    "types-jsonschema>=4.23.0.20241208",
+    "mypy>=2.3,<2.4",
+    "pre-commit>=4.6.1",
+    "ruff>=0.16.1",
+    "types-jsonschema>=4.26.0.20260518",
 ]
 test = [
-    "jsonschema>=4.23.0",
-    "pytest>=8.3.5",
-    "pytest-asyncio>=0.26.0",
-    "pytest-cov>=6.1.1",
-    "pytest-mock>=3.14.0",
-    "pytest-randomly>=3.16.0",
+    "jsonschema>=4.26.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
+    "pytest-randomly>=4.1.0",
 ]
 
 [tool.uv]
 default-groups = "all"
+preview-features = ["audit-command"]
 
 [tool.ruff]
 cache-dir = ".cache/ruff"
@@ -42,16 +44,18 @@ select = [
     "B", # flake8-bugbear
     "C4", # flake8-comprehensions
     "DJ", # flake8-django
+    "DTZ", # flake8-datetimez
+    "G", # flake8-logging-format
+    "PT", # flake8-pytest-style
     "T20", # flake8-print
     "SIM", # flake8-simplify
     "ARG", # flake8-unused-arguments
-    "FAST", # FastAPI
     "PTH", # flake8-use-pathlib
     "FURB", # refurb
     "RUF", # Ruff-specific rules
 ]
 ignore = [
-    # Suppressed by ruff formatter.
+    # Conflict with the formatter.
     "W191", # tab-indentation
     "E111", # indentation-with-invalid-multiple
     "E114", # indentation-with-invalid-multiple-comment
@@ -69,22 +73,24 @@ strict = true
 cache_dir = ".cache/mypy"
 mypy_path = "utilities"
 
-[tool.pytest.ini_options]
-pythonpath = "utilities"
+[tool.pytest]
+strict = true
 cache_dir = ".cache/pytest"
+pythonpath = ["utilities"]
+testpaths = ["tests", "utilities"]
 addopts = [
     "--doctest-modules",
     "--import-mode", "importlib",
     "--cov-config", "pyproject.toml",
-    "--cov-report", "term",
+    "--cov-report", "term:skip-covered",
     "--cov-report", "html",
     "--cov-fail-under", "100",
 ]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 markers = [
     "only: shorthand mark used to select a small subset of test cases for debugging",
 ]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 branch = true
@@ -96,6 +102,7 @@ omit = [
 
 [tool.coverage.report]
 exclude_also = [
+    "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "class .*\\bProtocol\\):",
     "@overload",
@@ -103,3 +110,8 @@ exclude_also = [
 
 [tool.coverage.html]
 directory = "var/cov-report"
+
+[tool.markdownlint]
+default = true
+MD007 = { indent = 4 }
+MD013 = { line_length = 88, strict = true }

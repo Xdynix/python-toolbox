@@ -77,7 +77,7 @@ def add_handler(signum: int) -> None:
     try:
         # Try to register via asyncio (UNIX only).
         loop.add_signal_handler(signum, chain_and_dispatch)
-    except (AttributeError, NotImplementedError):
+    except AttributeError, NotImplementedError:
         # Fallback for Windows or unsupported loops.
         signal.signal(signum, chain_and_dispatch)
 
@@ -182,7 +182,7 @@ async def demo() -> None:
     for sig in GRACEFUL:
         try:
             loop.add_signal_handler(sig, previous_handler, sig, None)
-        except (AttributeError, NotImplementedError):
+        except AttributeError, NotImplementedError:
             signal.signal(sig, previous_handler)
 
     async def nested() -> None:

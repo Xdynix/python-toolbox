@@ -1,5 +1,7 @@
-set dotenv-load := true
-set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+set dotenv-load
+
+[windows]
+set shell := ["powershell.exe", "-NoLogo", "-Command"]
 
 export PYTHONUTF8 := "1"
 
@@ -10,9 +12,18 @@ dev-setup:
     uv sync
     uv run pre-commit install
 
-# execute linters
+# run ruff linter and formatter
+ruff:
+    uv run ruff check --fix .
+    uv run ruff format .
+
+# execute all linters
 lint:
     uv run pre-commit run --all-files
+
+# audit locked dependencies for known vulnerabilities
+audit:
+    uv audit --frozen
 
 # execute tests
 test *args:
