@@ -68,7 +68,10 @@ class TestLabelKey:
         assert schema["minLength"] == LabelKey.MIN_LENGTH
         assert schema["maxLength"] == LabelKey.MAX_LENGTH
 
-    @pytest.mark.parametrize(("s", "expected"), VALID_DATA)
+    @pytest.mark.parametrize(
+        ("s", "expected"),
+        [pytest.param(s, expected, id=s) for s, expected in VALID_DATA],
+    )
     def test_valid(self, s: str, expected: tuple[str, str]) -> None:
         key = LabelKey(s)
         assert key.prefix == expected[0]
@@ -183,13 +186,33 @@ class TestRequirement:
     @pytest.mark.parametrize(
         ("req", "expected"),
         [
-            (ls.build_requirement("key", "Equals", ["value"]), "key=value"),
-            (ls.build_requirement("key", "DoubleEquals", ["value"]), "key==value"),
-            (ls.build_requirement("key", "NotEquals", ["value"]), "key!=value"),
-            (ls.build_requirement("key", "In", ["b", "a"]), "key in (a,b)"),
-            (ls.build_requirement("key", "NotIn", ["b", "a"]), "key notin (a,b)"),
-            (ls.build_requirement("key", "Exists"), "key"),
-            (ls.build_requirement("key", "DoesNotExist"), "!key"),
+            pytest.param(
+                ls.build_requirement("key", "Equals", ["value"]),
+                "key=value",
+                id="equals",
+            ),
+            pytest.param(
+                ls.build_requirement("key", "DoubleEquals", ["value"]),
+                "key==value",
+                id="double_equals",
+            ),
+            pytest.param(
+                ls.build_requirement("key", "NotEquals", ["value"]),
+                "key!=value",
+                id="not_equals",
+            ),
+            pytest.param(
+                ls.build_requirement("key", "In", ["b", "a"]), "key in (a,b)", id="in"
+            ),
+            pytest.param(
+                ls.build_requirement("key", "NotIn", ["b", "a"]),
+                "key notin (a,b)",
+                id="not_in",
+            ),
+            pytest.param(ls.build_requirement("key", "Exists"), "key", id="exists"),
+            pytest.param(
+                ls.build_requirement("key", "DoesNotExist"), "!key", id="does_not_exist"
+            ),
         ],
     )
     def test_str(self, req: Requirement, expected: str) -> None:
@@ -198,33 +221,40 @@ class TestRequirement:
     @pytest.mark.parametrize(
         ("data", "expected_type"),
         [
-            (
+            pytest.param(
                 {"key": "k", "operator": "Equals", "values": ["v"]},
                 ls.EqualityRequirement,
+                id="equals",
             ),
-            (
+            pytest.param(
                 {"key": "k", "operator": "DoubleEquals", "values": ["v"]},
                 ls.EqualityRequirement,
+                id="double_equals",
             ),
-            (
+            pytest.param(
                 {"key": "k", "operator": "NotEquals", "values": ["v"]},
                 ls.EqualityRequirement,
+                id="not_equals",
             ),
-            (
+            pytest.param(
                 {"key": "k", "operator": "In", "values": ["v"]},
                 ls.SetRequirement,
+                id="in",
             ),
-            (
+            pytest.param(
                 {"key": "k", "operator": "NotIn", "values": ["v"]},
                 ls.SetRequirement,
+                id="not_in",
             ),
-            (
+            pytest.param(
                 {"key": "k", "operator": "Exists"},
                 ls.PresenceRequirement,
+                id="exists",
             ),
-            (
+            pytest.param(
                 {"key": "k", "operator": "DoesNotExist"},
                 ls.PresenceRequirement,
+                id="does_not_exist",
             ),
         ],
     )
@@ -236,7 +266,14 @@ class TestRequirement:
         requirement = ls.build_requirement(**data)
         assert isinstance(requirement, expected_type)
 
-    @pytest.mark.parametrize("values", [[], ["value"], ["value1", "value2"]])
+    @pytest.mark.parametrize(
+        "values",
+        [
+            pytest.param([], id="empty"),
+            pytest.param(["value"], id="one_value"),
+            pytest.param(["value1", "value2"], id="two_values"),
+        ],
+    )
     def test_invalid_discriminator(self, values: Any) -> None:
         with pytest.raises(pydantic.ValidationError):
             ls.build_requirement("k", "invalid", values)
@@ -285,7 +322,14 @@ class TestEqualityRequirement:
         ls.build_requirement("key", op, ["value"])
 
     @pytest.mark.parametrize("op", operators)
-    @pytest.mark.parametrize("values", [None, [], ["value1", "value2"]])
+    @pytest.mark.parametrize(
+        "values",
+        [
+            pytest.param(None, id="none"),
+            pytest.param([], id="empty"),
+            pytest.param(["value1", "value2"], id="two_values"),
+        ],
+    )
     def test_invalid_values(self, op: Any, values: Any) -> None:
         with pytest.raises(pydantic.ValidationError):
             ls.build_requirement("key", op, values)
@@ -293,15 +337,26 @@ class TestEqualityRequirement:
     @pytest.mark.parametrize(
         ("op", "labels", "expected"),
         [
-            (Operator.EQUALS, {"key": "value"}, True),
-            (Operator.EQUALS, {"key": "other"}, False),
-            (Operator.EQUALS, {}, False),
-            (Operator.DOUBLE_EQUALS, {"key": "value"}, True),
-            (Operator.DOUBLE_EQUALS, {"key": "other"}, False),
-            (Operator.DOUBLE_EQUALS, {}, False),
-            (Operator.NOT_EQUALS, {"key": "value"}, False),
-            (Operator.NOT_EQUALS, {"key": "other"}, True),
-            (Operator.NOT_EQUALS, {}, True),
+            pytest.param(Operator.EQUALS, {"key": "value"}, True, id="equals_match"),
+            pytest.param(Operator.EQUALS, {"key": "other"}, False, id="equals_other"),
+            pytest.param(Operator.EQUALS, {}, False, id="equals_missing"),
+            pytest.param(
+                Operator.DOUBLE_EQUALS, {"key": "value"}, True, id="double_equals_match"
+            ),
+            pytest.param(
+                Operator.DOUBLE_EQUALS,
+                {"key": "other"},
+                False,
+                id="double_equals_other",
+            ),
+            pytest.param(Operator.DOUBLE_EQUALS, {}, False, id="double_equals_missing"),
+            pytest.param(
+                Operator.NOT_EQUALS, {"key": "value"}, False, id="not_equals_match"
+            ),
+            pytest.param(
+                Operator.NOT_EQUALS, {"key": "other"}, True, id="not_equals_other"
+            ),
+            pytest.param(Operator.NOT_EQUALS, {}, True, id="not_equals_missing"),
         ],
     )
     def test_matches(self, op: Any, labels: dict[str, str], expected: bool) -> None:
@@ -320,7 +375,13 @@ class TestSetRequirement:
         ls.build_requirement("key", op, ["value1", "value2"])
 
     @pytest.mark.parametrize("op", operators)
-    @pytest.mark.parametrize("values", [None, []])
+    @pytest.mark.parametrize(
+        "values",
+        [
+            pytest.param(None, id="none"),
+            pytest.param([], id="empty"),
+        ],
+    )
     def test_invalid_values(self, op: Any, values: Any) -> None:
         with pytest.raises(pydantic.ValidationError):
             ls.build_requirement("key", op, values)
@@ -328,14 +389,14 @@ class TestSetRequirement:
     @pytest.mark.parametrize(
         ("op", "labels", "expected"),
         [
-            (Operator.IN, {"key": "value1"}, True),
-            (Operator.IN, {"key": "value2"}, True),
-            (Operator.IN, {"key": "other"}, False),
-            (Operator.IN, {}, False),
-            (Operator.NOT_IN, {"key": "value1"}, False),
-            (Operator.NOT_IN, {"key": "value2"}, False),
-            (Operator.NOT_IN, {"key": "other"}, True),
-            (Operator.NOT_IN, {}, True),
+            pytest.param(Operator.IN, {"key": "value1"}, True, id="in_value1"),
+            pytest.param(Operator.IN, {"key": "value2"}, True, id="in_value2"),
+            pytest.param(Operator.IN, {"key": "other"}, False, id="in_other"),
+            pytest.param(Operator.IN, {}, False, id="in_missing"),
+            pytest.param(Operator.NOT_IN, {"key": "value1"}, False, id="not_in_value1"),
+            pytest.param(Operator.NOT_IN, {"key": "value2"}, False, id="not_in_value2"),
+            pytest.param(Operator.NOT_IN, {"key": "other"}, True, id="not_in_other"),
+            pytest.param(Operator.NOT_IN, {}, True, id="not_in_missing"),
         ],
     )
     def test_matches(self, op: Any, labels: dict[str, str], expected: bool) -> None:
@@ -354,7 +415,13 @@ class TestPresenceRequirement:
         ls.build_requirement("key", op)
 
     @pytest.mark.parametrize("op", operators)
-    @pytest.mark.parametrize("values", [None, ["value"]])
+    @pytest.mark.parametrize(
+        "values",
+        [
+            pytest.param(None, id="none"),
+            pytest.param(["value"], id="one_value"),
+        ],
+    )
     def test_invalid_values(self, op: Any, values: Any) -> None:
         with pytest.raises(pydantic.ValidationError):
             ls.build_requirement("key", op, values)
@@ -362,12 +429,24 @@ class TestPresenceRequirement:
     @pytest.mark.parametrize(
         ("op", "labels", "expected"),
         [
-            (Operator.EXISTS, {"key": "value"}, True),
-            (Operator.EXISTS, {"key": "other"}, True),
-            (Operator.EXISTS, {}, False),
-            (Operator.DOES_NOT_EXIST, {"key": "value"}, False),
-            (Operator.DOES_NOT_EXIST, {"key": "other"}, False),
-            (Operator.DOES_NOT_EXIST, {}, True),
+            pytest.param(Operator.EXISTS, {"key": "value"}, True, id="exists_match"),
+            pytest.param(Operator.EXISTS, {"key": "other"}, True, id="exists_other"),
+            pytest.param(Operator.EXISTS, {}, False, id="exists_missing"),
+            pytest.param(
+                Operator.DOES_NOT_EXIST,
+                {"key": "value"},
+                False,
+                id="does_not_exist_match",
+            ),
+            pytest.param(
+                Operator.DOES_NOT_EXIST,
+                {"key": "other"},
+                False,
+                id="does_not_exist_other",
+            ),
+            pytest.param(
+                Operator.DOES_NOT_EXIST, {}, True, id="does_not_exist_missing"
+            ),
         ],
     )
     def test_matches(self, op: Any, labels: dict[str, str], expected: bool) -> None:
@@ -453,29 +532,51 @@ class TestLabelSelector:
         ("s", "expected"),
         [
             # Single Requirement
-            ("a=b", [{"key": "a", "operator": "Equals", "values": ["b"]}]),
-            ("a==b", [{"key": "a", "operator": "DoubleEquals", "values": ["b"]}]),
-            ("a!=b", [{"key": "a", "operator": "NotEquals", "values": ["b"]}]),
-            ("a in (b)", [{"key": "a", "operator": "In", "values": ["b"]}]),
-            ("a notin (b)", [{"key": "a", "operator": "NotIn", "values": ["b"]}]),
-            ("a", [{"key": "a", "operator": "Exists"}]),
-            ("!a", [{"key": "a", "operator": "DoesNotExist"}]),
+            pytest.param(
+                "a=b",
+                [{"key": "a", "operator": "Equals", "values": ["b"]}],
+                id="equals",
+            ),
+            pytest.param(
+                "a==b",
+                [{"key": "a", "operator": "DoubleEquals", "values": ["b"]}],
+                id="double_equals",
+            ),
+            pytest.param(
+                "a!=b",
+                [{"key": "a", "operator": "NotEquals", "values": ["b"]}],
+                id="not_equals",
+            ),
+            pytest.param(
+                "a in (b)", [{"key": "a", "operator": "In", "values": ["b"]}], id="in"
+            ),
+            pytest.param(
+                "a notin (b)",
+                [{"key": "a", "operator": "NotIn", "values": ["b"]}],
+                id="not_in",
+            ),
+            pytest.param("a", [{"key": "a", "operator": "Exists"}], id="exists"),
+            pytest.param(
+                "!a", [{"key": "a", "operator": "DoesNotExist"}], id="does_not_exist"
+            ),
             # Multiple Requirements
-            (
+            pytest.param(
                 "a=b, !c",
                 [
                     {"key": "a", "operator": "Equals", "values": ["b"]},
                     {"key": "c", "operator": "DoesNotExist"},
                 ],
+                id="equals_and_does_not_exist",
             ),
-            (
+            pytest.param(
                 "a=b, c in (d,e)",
                 [
                     {"key": "a", "operator": "Equals", "values": ["b"]},
                     {"key": "c", "operator": "In", "values": ["d", "e"]},
                 ],
+                id="equals_and_in",
             ),
-            (
+            pytest.param(
                 "example.com/release=stable, foo/bar in (baz)",
                 [
                     {
@@ -485,60 +586,119 @@ class TestLabelSelector:
                     },
                     {"key": "foo/bar", "operator": "In", "values": ["baz"]},
                 ],
+                id="prefixed_keys",
             ),
             # Empty Selector
-            ("", []),
+            pytest.param("", [], id="empty"),
             # Special Key/Value
-            ("in=true", [{"key": "in", "operator": "Equals", "values": ["true"]}]),
-            ("in notin (in)", [{"key": "in", "operator": "NotIn", "values": ["in"]}]),
-            (
+            pytest.param(
+                "in=true",
+                [{"key": "in", "operator": "Equals", "values": ["true"]}],
+                id="in_as_key",
+            ),
+            pytest.param(
+                "in notin (in)",
+                [{"key": "in", "operator": "NotIn", "values": ["in"]}],
+                id="in_as_key_and_value",
+            ),
+            pytest.param(
                 "notin notin (in,notin)",
                 [{"key": "notin", "operator": "NotIn", "values": ["in", "notin"]}],
+                id="notin_as_key_and_value",
             ),
             # Arbitrary Spaces
-            ("  a = b", [{"key": "a", "operator": "Equals", "values": ["b"]}]),
-            ("a   in(b)  ", [{"key": "a", "operator": "In", "values": ["b"]}]),
-            (
+            pytest.param(
+                "  a = b",
+                [{"key": "a", "operator": "Equals", "values": ["b"]}],
+                id="spaces_around_equals",
+            ),
+            pytest.param(
+                "a   in(b)  ",
+                [{"key": "a", "operator": "In", "values": ["b"]}],
+                id="spaces_around_in",
+            ),
+            pytest.param(
                 "a   in(b  , c , , )  ",
                 [{"key": "a", "operator": "In", "values": ["", "b", "c"]}],
+                id="spaces_inside_set",
             ),
-            (
+            pytest.param(
                 "a=b,c\tin\n(d,e)",
                 [
                     {"key": "a", "operator": "Equals", "values": ["b"]},
                     {"key": "c", "operator": "In", "values": ["d", "e"]},
                 ],
+                id="tab_and_newline",
             ),
             # Empty Values
-            ("a=", [{"key": "a", "operator": "Equals", "values": [""]}]),
-            (
+            pytest.param(
+                "a=",
+                [{"key": "a", "operator": "Equals", "values": [""]}],
+                id="empty_value",
+            ),
+            pytest.param(
                 "a=,b=",
                 [
                     {"key": "a", "operator": "Equals", "values": [""]},
                     {"key": "b", "operator": "Equals", "values": [""]},
                 ],
+                id="two_empty_values",
             ),
-            ("a in ()", [{"key": "a", "operator": "In", "values": [""]}]),
-            ("a in (,)", [{"key": "a", "operator": "In", "values": [""]}]),
-            ("a in (,,)", [{"key": "a", "operator": "In", "values": [""]}]),
-            ("a in (,,,)", [{"key": "a", "operator": "In", "values": [""]}]),
-            ("a in (b,)", [{"key": "a", "operator": "In", "values": ["", "b"]}]),
-            ("a in (b,,)", [{"key": "a", "operator": "In", "values": ["", "b"]}]),
-            (
+            pytest.param(
+                "a in ()",
+                [{"key": "a", "operator": "In", "values": [""]}],
+                id="empty_set",
+            ),
+            pytest.param(
+                "a in (,)",
+                [{"key": "a", "operator": "In", "values": [""]}],
+                id="set_of_one_comma",
+            ),
+            pytest.param(
+                "a in (,,)",
+                [{"key": "a", "operator": "In", "values": [""]}],
+                id="set_of_two_commas",
+            ),
+            pytest.param(
+                "a in (,,,)",
+                [{"key": "a", "operator": "In", "values": [""]}],
+                id="set_of_three_commas",
+            ),
+            pytest.param(
+                "a in (b,)",
+                [{"key": "a", "operator": "In", "values": ["", "b"]}],
+                id="set_with_trailing_comma",
+            ),
+            pytest.param(
+                "a in (b,,)",
+                [{"key": "a", "operator": "In", "values": ["", "b"]}],
+                id="set_with_two_trailing_commas",
+            ),
+            pytest.param(
                 "x in (foo,,baz),y,z notin ()",
                 [
                     {"key": "x", "operator": "In", "values": ["", "foo", "baz"]},
                     {"key": "y", "operator": "Exists"},
                     {"key": "z", "operator": "NotIn", "values": [""]},
                 ],
+                id="empty_values_mixed",
             ),
             # Duplicate Values
-            ("a in (b,b)", [{"key": "a", "operator": "In", "values": ["b"]}]),
+            pytest.param(
+                "a in (b,b)",
+                [{"key": "a", "operator": "In", "values": ["b"]}],
+                id="duplicate_values",
+            ),
             # Duplicate Requirements
-            ("a=b,a=b", [{"key": "a", "operator": "Equals", "values": ["b"]}]),
-            (
+            pytest.param(
+                "a=b,a=b",
+                [{"key": "a", "operator": "Equals", "values": ["b"]}],
+                id="duplicate_requirements",
+            ),
+            pytest.param(
                 "a in (b,c), a in (c,b)",
                 [{"key": "a", "operator": "In", "values": ["b", "c"]}],
+                id="duplicate_set_requirements",
             ),
         ],
     )
