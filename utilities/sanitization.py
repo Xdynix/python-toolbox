@@ -1,4 +1,5 @@
 __all__ = (
+    "require_ascii_local_part",
     "sanitize_email_subject",
     "sanitize_filename",
     "sanitize_formatted_text",
@@ -159,6 +160,29 @@ def sanitize_email_subject(subject: str) -> str:
         'Single line'
     """
     return "".join(subject.splitlines())
+
+
+def require_ascii_local_part(email: str) -> str:
+    """Reject an email address whose part before the @ is not plain ASCII.
+
+    Django's email backends do not support SMTPUTF8, so such an address cannot be
+    sent to: the header renders it as a bogus RFC 2047 encoded-word and the SMTP
+    backend refuses it. Non-ASCII domains are fine; they are IDNA-encoded on send.
+
+    Examples:
+        >>> require_ascii_local_part("john@example.com")
+        'john@example.com'
+        >>> require_ascii_local_part("john@exämple.com")
+        'john@exämple.com'
+        >>> require_ascii_local_part("jöhn@example.com")
+        Traceback (most recent call last):
+          ...
+        ValueError: The part before the @ must contain only ASCII characters.
+    """
+    local_part, _, _domain = email.rpartition("@")
+    if not local_part.isascii():
+        raise ValueError("The part before the @ must contain only ASCII characters.")
+    return email
 
 
 def sanitize_filename(value: Any, *, max_length: int = 255) -> str:
