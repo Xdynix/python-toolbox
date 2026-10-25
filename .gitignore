@@ -6,9 +6,6 @@
 # Coding agent configurations
 /.claude
 
-# Local scratch work, not part of the project
-scratch/
-
 ### Linux template
 *~
 
@@ -203,6 +200,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/

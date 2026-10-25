@@ -479,7 +479,6 @@ class LabelSelector(RootModel[frozenset[Requirement]]):
             ``True`` if all requirements in this selector match the given labels,
             ``False`` otherwise.
         """
-
         return all(requirement.matches(labels) for requirement in self.requirements)
 
     @field_serializer("root")

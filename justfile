@@ -1,3 +1,5 @@
+# [windows] on a `set` item is what requires 1.56.0.
+set minimum-version := '1.56.0'
 set dotenv-load
 
 [windows]
@@ -5,7 +7,7 @@ set shell := ["powershell.exe", "-NoLogo", "-Command"]
 
 export PYTHONUTF8 := "1"
 
-default: lint test
+default: ruff
 
 # set up development environment
 dev-setup:

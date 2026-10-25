@@ -152,7 +152,7 @@ async def graceful_shutdown(
             remove_handler(sig)
 
 
-async def wait_or_timeout(event: asyncio.Event, timeout: float) -> bool:
+async def wait_or_timeout(event: asyncio.Event, timeout: float) -> bool:  # noqa: ASYNC109
     """Wait for an event with a timeout.
 
     Args:

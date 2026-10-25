@@ -10,7 +10,7 @@ from typing import Any
 
 
 def sanitize_text(value: Any) -> str:
-    """Clean a text value by removing unprintable characters and normalizing whitespace.
+    r"""Clean text by removing unprintable characters and normalizing whitespace.
 
     Converts all Unicode whitespace (including NBSP) to single ASCII spaces, removes
     control and formatting characters, and performs NFC normalization without altering
@@ -21,13 +21,13 @@ def sanitize_text(value: Any) -> str:
     ``StringConstraints``.
 
     Examples:
-        >>> sanitize_text("hello\\u00a0world")  # NBSP to space
+        >>> sanitize_text("hello\u00a0world")  # NBSP to space
         'hello world'
-        >>> sanitize_text("line1\\nline2")  # Newline to space
+        >>> sanitize_text("line1\nline2")  # Newline to space
         'line1 line2'
-        >>> sanitize_text("tab\\there")  # Tab to space
+        >>> sanitize_text("tab\there")  # Tab to space
         'tab here'
-        >>> sanitize_text("text\\u200b\\u200c")  # Remove zero-width chars
+        >>> sanitize_text("text\u200b\u200c")  # Remove zero-width chars
         'text'
         >>> sanitize_text("  multiple   spaces  ")  # Collapse and trim
         'multiple spaces'
@@ -41,15 +41,15 @@ def sanitize_text(value: Any) -> str:
         '∀x∈ℝ, x²≥0'
         >>> sanitize_text("José García")  # Preserve accents
         'José García'
-        >>> sanitize_text("\\x00control\\x01chars")  # Remove control chars
+        >>> sanitize_text("\x00control\x01chars")  # Remove control chars
         'controlchars'
-        >>> sanitize_text("\\u200b\\u200b\\u200b")  # All invisible becomes empty
+        >>> sanitize_text("\u200b\u200b\u200b")  # All invisible becomes empty
         ''
         >>> sanitize_text("   ")  # All whitespace becomes empty
         ''
-        >>> sanitize_text("test\\u2028line\\u2029break")  # Unicode line separators
+        >>> sanitize_text("test\u2028line\u2029break")  # Unicode line separators
         'test line break'
-        >>> sanitize_text("cafe\\u0301")  # NFC normalization (decomposed -> composed)
+        >>> sanitize_text("cafe\u0301")  # NFC normalization (decomposed -> composed)
         'café'
         >>> sanitize_text(42)
         Traceback (most recent call last):
@@ -77,7 +77,7 @@ def sanitize_text(value: Any) -> str:
 
 
 def sanitize_formatted_text(value: Any) -> str:
-    """Clean formatted text while preserving line structure and spacing.
+    r"""Clean formatted text while preserving line structure and spacing.
 
     Similar to ``sanitize_text`` but preserves newlines, tabs, and all internal spacing
     to support formatted content like text-based tables. Each line is cleaned
@@ -87,30 +87,30 @@ def sanitize_formatted_text(value: Any) -> str:
     removed.
 
     Examples:
-        >>> sanitize_formatted_text("Line 1\\nLine 2")
-        'Line 1\\nLine 2'
-        >>> sanitize_formatted_text("  Indented\\n    More indented")
-        '  Indented\\n    More indented'
-        >>> sanitize_formatted_text("Name\\tAge\\nAlice\\t25\\nBob\\t30")
-        'Name\\tAge\\nAlice\\t25\\nBob\\t30'
+        >>> sanitize_formatted_text("Line 1\nLine 2")
+        'Line 1\nLine 2'
+        >>> sanitize_formatted_text("  Indented\n    More indented")
+        '  Indented\n    More indented'
+        >>> sanitize_formatted_text("Name\tAge\nAlice\t25\nBob\t30")
+        'Name\tAge\nAlice\t25\nBob\t30'
         >>> sanitize_formatted_text("Multiple   spaces   preserved")
         'Multiple   spaces   preserved'
-        >>> sanitize_formatted_text("Text\\u00a0NBSP")
+        >>> sanitize_formatted_text("Text\u00a0NBSP")
         'Text NBSP'
-        >>> sanitize_formatted_text("\\u200bInvisible removed\\nNext line")
-        'Invisible removed\\nNext line'
-        >>> sanitize_formatted_text("Trailing spaces  \\nGone   ")
-        'Trailing spaces\\nGone'
-        >>> sanitize_formatted_text("Empty\\n\\nLines preserved")
-        'Empty\\n\\nLines preserved'
-        >>> sanitize_formatted_text("Text\\n\\n")
+        >>> sanitize_formatted_text("\u200bInvisible removed\nNext line")
+        'Invisible removed\nNext line'
+        >>> sanitize_formatted_text("Trailing spaces  \nGone   ")
+        'Trailing spaces\nGone'
+        >>> sanitize_formatted_text("Empty\n\nLines preserved")
+        'Empty\n\nLines preserved'
+        >>> sanitize_formatted_text("Text\n\n")
         'Text'
-        >>> sanitize_formatted_text("α-helix\\nβ-sheet")
-        'α-helix\\nβ-sheet'
-        >>> sanitize_formatted_text("\\x00control\\x01\\nremoved")
-        'control\\nremoved'
-        >>> sanitize_formatted_text("cafe\\u0301\\nline 2")
-        'café\\nline 2'
+        >>> sanitize_formatted_text("α-helix\nβ-sheet")
+        'α-helix\nβ-sheet'
+        >>> sanitize_formatted_text("\x00control\x01\nremoved")
+        'control\nremoved'
+        >>> sanitize_formatted_text("cafe\u0301\nline 2")
+        'café\nline 2'
         >>> sanitize_formatted_text(42)
         Traceback (most recent call last):
           ...
@@ -150,10 +150,10 @@ def sanitize_formatted_text(value: Any) -> str:
 
 
 def sanitize_email_subject(subject: str) -> str:
-    """Remove newlines from email subject to prevent header injection.
+    r"""Remove newlines from email subject to prevent header injection.
 
     Examples:
-        >>> sanitize_email_subject("Hello\\nWorld")
+        >>> sanitize_email_subject("Hello\nWorld")
         'HelloWorld'
         >>> sanitize_email_subject("Single line")
         'Single line'
@@ -162,7 +162,7 @@ def sanitize_email_subject(subject: str) -> str:
 
 
 def sanitize_filename(value: Any, *, max_length: int = 255) -> str:
-    """Sanitize a filename for safe storage and email attachment use.
+    r"""Sanitize a filename for safe storage and email attachment use.
 
     The output is guaranteed to have no control characters or path separators, no
     leading/trailing whitespace or dots, NFC-normalized Unicode, and a length within the
@@ -185,9 +185,9 @@ def sanitize_filename(value: Any, *, max_length: int = 255) -> str:
     Examples:
         >>> sanitize_filename("report.pdf")
         'report.pdf'
-        >>> sanitize_filename("path/to\\\\file.pdf")
+        >>> sanitize_filename("path/to\\file.pdf")
         'path_to_file.pdf'
-        >>> sanitize_filename("\\x00evil\\x01name.pdf")
+        >>> sanitize_filename("\x00evil\x01name.pdf")
         'evilname.pdf'
         >>> sanitize_filename("  .hidden.pdf  ")
         'hidden.pdf'

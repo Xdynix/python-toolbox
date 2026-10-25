@@ -11,14 +11,14 @@ dev = [
     "rust-just>=1.58.0",
 ]
 lint = [
-    "mypy>=2.3,<2.4",
+    "mypy>=2.3,<3",
     "pre-commit>=4.6.1",
     "ruff>=0.16.1",
     "types-jsonschema>=4.26.0.20260518",
 ]
 test = [
     "jsonschema>=4.26.0",
-    "pytest>=9.1.1",
+    "pytest>=9.1.1,<10",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
@@ -26,6 +26,7 @@ test = [
 ]
 
 [tool.uv]
+required-version = ">=0.13.5"
 default-groups = "all"
 preview-features = ["audit-command"]
 
@@ -38,8 +39,10 @@ select = [
     "E", # pycodestyle errors
     "W", # pycodestyle warnings
     "I", # isort
+    "D", # pydocstyle
     "PGH", # pygrep-hooks
     "UP", # pyupgrade
+    "ASYNC", # flake8-async
     "S", # flake8-bandit
     "B", # flake8-bugbear
     "C4", # flake8-comprehensions
@@ -47,7 +50,7 @@ select = [
     "DTZ", # flake8-datetimez
     "G", # flake8-logging-format
     "PT", # flake8-pytest-style
-    "T20", # flake8-print
+    "T", # flake8-debugger, flake8-print
     "SIM", # flake8-simplify
     "ARG", # flake8-unused-arguments
     "PTH", # flake8-use-pathlib
@@ -55,12 +58,18 @@ select = [
     "RUF", # Ruff-specific rules
 ]
 ignore = [
+    # Docstrings are optional; omit them when the name says it all.
+    "D1", # undocumented-*
     # Conflict with the formatter.
     "W191", # tab-indentation
     "E111", # indentation-with-invalid-multiple
     "E114", # indentation-with-invalid-multiple-comment
     "E117", # over-indented
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
@@ -70,8 +79,10 @@ ignore = [
 
 [tool.mypy]
 strict = true
+enable_error_code = ["deprecated"]
 cache_dir = ".cache/mypy"
 mypy_path = "utilities"
+num_workers = 8
 
 [tool.pytest]
 strict = true
@@ -88,6 +99,12 @@ addopts = [
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+# Quoted because pytest declares this option as a string.
+max_warnings = "0"
+filterwarnings = [
+    # Python hides ResourceWarning by default; show it so unclosed files fail the run.
+    "default::ResourceWarning",
+]
 markers = [
     "only: shorthand mark used to select a small subset of test cases for debugging",
 ]
@@ -103,7 +120,6 @@ omit = [
 [tool.coverage.report]
 exclude_also = [
     "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
     "class .*\\bProtocol\\):",
     "@overload",
 ]
@@ -114,4 +130,4 @@ directory = "var/cov-report"
 [tool.markdownlint]
 default = true
 MD007 = { indent = 4 }
-MD013 = { line_length = 88, strict = true }
+MD013 = { line_length = 88, strict = true, tables = false, code_blocks = false }
